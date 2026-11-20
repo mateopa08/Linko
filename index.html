@@ -1,0 +1,934 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="description" content="Prototipo de Linko: plataforma que conecta pymes tradicionales con jóvenes especialistas en tecnología. Cuatro etapas: registro y diagnóstico, asignación, ejecución y seguimiento.">
+  <title>Plataforma Linko</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Serif:wght@400;500;600&display=swap">
+  <style>
+    /* Reset base (lo aporta el contenedor en la versión publicada) */
+    *{box-sizing:border-box}
+    img{max-width:100%}
+    [hidden]{display:none!important}
+  </style>
+  <style>
+/* Layout: barra de marca + cuatro pestañas de etapa fijas arriba; debajo, una columna
+   de trabajo con bloques de datos a ancho completo donde las cifras lo piden. */
+:root{
+  --surface:#F5F7F6; --panel:#FFFFFF; --panel-2:#F0F3F1; --line:#DFE5E2; --line-2:#C8D2CE;
+  --ink:#141D1A; --ink-2:#5A6762; --ink-3:#808C87;
+  --brand:#167A5F; --brand-deep:#0C382C; --brand-soft:#E6F1EC; --brand-line:#A8CDC0;
+  --amber:#8A5B10; --amber-soft:#FBF1DF; --amber-line:#E3CB9B;
+  --alert:#97362A; --alert-soft:#FAEBE8;
+  --f-ui:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-serif:"IBM Plex Serif",Georgia,"Times New Roman",serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
+  color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --surface:#101614; --panel:#18211E; --panel-2:#1E2825; --line:#2C3A35; --line-2:#3A4B45;
+  --ink:#E7EDEA; --ink-2:#9AA8A3; --ink-3:#7A8882;
+  --brand:#4BAE8E; --brand-deep:#0A2A21; --brand-soft:#17302A; --brand-line:#2F5A4B;
+  --amber:#D7A857; --amber-soft:#2B2416; --amber-line:#4A3D1F;
+  --alert:#E08273; --alert-soft:#2E1C19;
+  color-scheme:dark;
+}}
+:root[data-theme="dark"]{
+  --surface:#101614; --panel:#18211E; --panel-2:#1E2825; --line:#2C3A35; --line-2:#3A4B45;
+  --ink:#E7EDEA; --ink-2:#9AA8A3; --ink-3:#7A8882;
+  --brand:#4BAE8E; --brand-deep:#0A2A21; --brand-soft:#17302A; --brand-line:#2F5A4B;
+  --amber:#D7A857; --amber-soft:#2B2416; --amber-line:#4A3D1F;
+  --alert:#E08273; --alert-soft:#2E1C19;
+  color-scheme:dark;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--surface);color:var(--ink);font-family:var(--f-ui);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--brand-deep)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--brand);outline-offset:2px;border-radius:2px}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.wrap{max-width:1160px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* ---- Barra de marca ---- */
+.brandbar{background:var(--brand-deep);color:#DCE9E3}
+.brandbar .wrap{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:11px}
+.logo{display:flex;align-items:center;gap:9px;font-family:var(--f-serif);font-size:21px;font-weight:600;letter-spacing:-.01em;color:#fff}
+.logo svg{display:block;flex:none}
+.bb-right{display:flex;align-items:center;gap:14px;font-size:13px;min-width:0}
+.demo{font-family:var(--f-mono);font-size:11px;letter-spacing:.04em;border:1px solid #3E5C51;color:#A9C6BA;padding:2px 7px;border-radius:3px;white-space:nowrap}
+.acct{display:flex;align-items:center;gap:8px;min-width:0}
+.acct b{font-weight:600;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.acct i{font-style:normal;color:#8FAEA2;white-space:nowrap}
+.ava{width:28px;height:28px;border-radius:50%;background:#1E5143;color:#CFE6DC;display:grid;place-items:center;font-size:11px;font-weight:600;flex:none}
+@media (max-width:600px){.demo{display:none}.acct i{display:none}}
+
+/* ---- Pestañas de etapa ---- */
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--panel);border-bottom:1px solid var(--line)}
+.tabs .wrap{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.tabs .wrap::-webkit-scrollbar{display:none}
+.tab{appearance:none;background:none;border:0;border-bottom:2px solid transparent;padding:13px 14px 11px;display:flex;align-items:center;gap:9px;color:var(--ink-2);cursor:pointer;white-space:nowrap;font-size:14px}
+.tab:hover{color:var(--ink)}
+.tab .tn{width:21px;height:21px;border-radius:50%;border:1px solid var(--line-2);display:grid;place-items:center;font-size:11px;font-weight:600;flex:none;font-family:var(--f-mono)}
+.tab[aria-selected="true"]{color:var(--ink);font-weight:600;border-bottom-color:var(--brand)}
+.tab[aria-selected="true"] .tn{background:var(--brand);border-color:var(--brand);color:#fff}
+.tab.done .tn{background:var(--brand-soft);border-color:var(--brand-line);color:var(--brand)}
+
+/* ---- Estructura de página ---- */
+main{padding-block:28px 56px}
+.phead{margin-bottom:22px}
+.eyebrow{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.07em;color:var(--brand);margin:0 0 5px}
+h1{font-family:var(--f-serif);font-weight:600;font-size:clamp(26px,3.3vw,33px);line-height:1.15;margin:0 0 6px;letter-spacing:-.015em;text-wrap:balance}
+.sub{color:var(--ink-2);margin:0;max-width:68ch;font-size:15px}
+h2{font-family:var(--f-serif);font-weight:600;font-size:19px;line-height:1.25;margin:0}
+h3{font-size:13px;font-weight:600;color:var(--ink-2);margin:0 0 10px;letter-spacing:.01em}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:22px}
+.card + .card{margin-top:16px}
+.card-h{display:flex;justify-content:space-between;align-items:baseline;gap:14px;flex-wrap:wrap;margin-bottom:4px}
+.card-h p{margin:0;color:var(--ink-2);font-size:14px}
+.card > p.lead{margin:0 0 16px;color:var(--ink-2);font-size:14px}
+.cols{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+@media (max-width:900px){.cols{grid-template-columns:minmax(0,1fr)}}
+
+/* ---- Controles ---- */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border:1px solid var(--line-2);background:var(--panel);color:var(--ink);border-radius:7px;padding:9px 15px;font-size:14px;font-weight:500;cursor:pointer;line-height:1.3;transition:background .14s,border-color .14s}
+.btn:hover{background:var(--panel-2);border-color:var(--ink-3)}
+.btn.pri{background:var(--brand);border-color:var(--brand);color:#fff}
+.btn.pri:hover{background:var(--brand-deep);border-color:var(--brand-deep)}
+.btn.sm{padding:6px 11px;font-size:13px;border-radius:6px}
+.btn[disabled]{cursor:not-allowed;background:var(--panel-2);border-color:var(--line);color:var(--ink-3)}
+.btn[disabled]:hover{background:var(--panel-2);border-color:var(--line)}
+.btn svg{flex:none}
+.linkb{background:none;border:0;padding:0;color:var(--brand);font-size:14px;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.rowb{display:flex;gap:9px;flex-wrap:wrap}
+.field{display:flex;flex-direction:column;gap:5px}
+.field label{font-size:13px;font-weight:500;color:var(--ink-2)}
+input[type=text],select,textarea{background:var(--panel);border:1px solid var(--line-2);border-radius:7px;padding:9px 11px;width:100%;font-size:14.5px}
+textarea{min-height:76px;resize:vertical}
+.fgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:760px){.fgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:460px){.fgrid{grid-template-columns:minmax(0,1fr)}}
+
+/* ---- Carga de archivos ---- */
+.drop{border:1.5px dashed var(--line-2);border-radius:9px;background:var(--panel-2);padding:26px 18px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:9px;cursor:pointer;transition:border-color .14s,background .14s}
+.drop:hover,.drop.over{border-color:var(--brand);background:var(--brand-soft)}
+.drop b{font-size:14.5px;font-weight:600}
+.drop span{color:var(--ink-2);font-size:13px;max-width:46ch}
+.drop .ic{color:var(--brand)}
+.files{list-style:none;margin:14px 0 0;padding:0;display:flex;flex-direction:column;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.file{display:grid;grid-template-columns:22px minmax(0,1fr) auto auto;gap:11px;align-items:center;background:var(--panel);padding:10px 13px}
+.file .fi{color:var(--ink-3)}
+.fname{font-family:var(--f-mono);font-size:12.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fmeta{font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);white-space:nowrap}
+.fx{background:none;border:0;color:var(--ink-3);cursor:pointer;padding:3px;line-height:0;border-radius:4px}
+.fx:hover{color:var(--alert);background:var(--alert-soft)}
+@media (max-width:560px){.file{grid-template-columns:22px minmax(0,1fr) auto}.file .fmeta{display:none}}
+
+.chip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;padding:2px 8px;border-radius:999px;border:1px solid;white-space:nowrap;font-family:var(--f-ui)}
+.chip.ok{background:var(--brand-soft);border-color:var(--brand-line);color:var(--brand)}
+.chip.wait{background:var(--amber-soft);border-color:var(--amber-line);color:var(--amber)}
+.chip.off{background:var(--panel-2);border-color:var(--line-2);color:var(--ink-3)}
+
+/* ---- Confidencialidad ---- */
+.conf{border:1px solid var(--brand-line);background:var(--brand-soft);border-radius:9px;padding:18px}
+.conf-h{display:flex;align-items:center;gap:9px;margin-bottom:10px;color:var(--brand)}
+.conf-h b{font-size:14.5px;color:var(--ink)}
+.conf ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px}
+.conf li{display:grid;grid-template-columns:16px minmax(0,1fr);gap:9px;font-size:13.5px;color:var(--ink-2);align-items:start}
+.conf li svg{margin-top:3px;color:var(--brand);flex:none}
+.conf li b{color:var(--ink);font-weight:600}
+.log{margin-top:14px;border-top:1px solid var(--brand-line);padding-top:12px}
+.log table{width:100%;border-collapse:collapse;font-family:var(--f-mono);font-size:11.5px;color:var(--ink-2)}
+.log td{padding:3px 0;vertical-align:top}
+.log td:last-child{text-align:right;white-space:nowrap;color:var(--ink-3)}
+
+.consents{display:flex;flex-direction:column;gap:11px;margin-top:4px}
+.cb{display:grid;grid-template-columns:18px minmax(0,1fr);gap:10px;align-items:start;cursor:pointer;font-size:13.5px;color:var(--ink-2)}
+.cb input{width:17px;height:17px;margin:2px 0 0;accent-color:var(--brand);cursor:pointer}
+.cb b{color:var(--ink);font-weight:600}
+
+/* ---- Análisis ---- */
+.analyzing{display:flex;flex-direction:column;gap:9px}
+.astep{display:grid;grid-template-columns:18px minmax(0,1fr);gap:10px;align-items:center;font-size:14px;color:var(--ink-3)}
+.astep.on{color:var(--ink)}
+.astep.on b{font-weight:500}
+.spin{width:14px;height:14px;border:2px solid var(--line-2);border-top-color:var(--brand);border-radius:50%;animation:sp .7s linear infinite}
+@keyframes sp{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.spin{animation-duration:2s}}
+
+/* ---- Resultado del diagnóstico ---- */
+.score{display:grid;grid-template-columns:auto minmax(0,1fr);gap:22px;align-items:center}
+.ring{position:relative;width:118px;height:118px;flex:none}
+.ring svg{display:block;transform:rotate(-90deg)}
+.ring .rv{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.ring .rv b{display:block;font-family:var(--f-serif);font-size:33px;line-height:1;font-weight:600}
+.ring .rv span{font-family:var(--f-mono);font-size:10.5px;color:var(--ink-3)}
+.score-t b{font-family:var(--f-serif);font-size:21px;font-weight:600;display:block}
+.score-t p{margin:4px 0 0;color:var(--ink-2);font-size:14px;max-width:46ch}
+.dims{display:flex;flex-direction:column;gap:11px;margin-top:18px;border-top:1px solid var(--line);padding-top:16px}
+.dim{display:grid;grid-template-columns:minmax(120px,170px) minmax(0,1fr) 40px;gap:13px;align-items:center;font-size:13.5px}
+.dim .dt{color:var(--ink-2)}
+.trk{height:7px;background:var(--panel-2);border-radius:4px;overflow:hidden;border:1px solid var(--line)}
+.trk i{display:block;height:100%;background:var(--brand);border-radius:4px}
+.dim .dv{font-family:var(--f-mono);font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums}
+@media (max-width:560px){.dim{grid-template-columns:minmax(0,1fr) 40px}.dim .trk{grid-column:1/-1;order:3}}
+
+.finds{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.finds li{display:grid;grid-template-columns:7px minmax(0,1fr);gap:12px;align-items:start}
+.finds li::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--brand);margin-top:7px}
+.finds p{margin:0;font-size:14px}
+.finds .src{font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);margin-top:2px}
+
+.pilots{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.pilot{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:15px;align-items:center;border:1px solid var(--line);border-radius:9px;padding:15px 17px;background:var(--panel)}
+.pilot.first{border-color:var(--brand-line);background:var(--brand-soft)}
+.pilot .rk{width:28px;height:28px;border-radius:50%;background:var(--panel-2);border:1px solid var(--line-2);display:grid;place-items:center;font-family:var(--f-mono);font-size:12.5px;font-weight:500}
+.pilot.first .rk{background:var(--brand);border-color:var(--brand);color:#fff}
+.pilot b{font-size:15px;font-weight:600;display:block}
+.pilot .pd{font-size:13px;color:var(--ink-2);margin-top:2px}
+.pilot .pv{text-align:right;font-family:var(--f-mono);white-space:nowrap}
+.pilot .pv b{font-family:var(--f-serif);font-size:19px;color:var(--brand);font-weight:600}
+.pilot .pv span{display:block;font-size:11px;color:var(--ink-3)}
+@media (max-width:560px){.pilot{grid-template-columns:30px minmax(0,1fr)}.pilot .pv{grid-column:2;text-align:left;margin-top:7px}.pilot .pv b{font-size:17px}}
+
+/* ---- Asignación ---- */
+.curate{display:flex;align-items:flex-start;gap:11px;background:var(--panel-2);border:1px solid var(--line);border-radius:9px;padding:14px 16px;margin-bottom:16px;font-size:13.5px;color:var(--ink-2)}
+.curate svg{color:var(--brand);flex:none;margin-top:2px}
+.curate b{color:var(--ink)}
+.terna{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+@media (max-width:860px){.terna{grid-template-columns:minmax(0,1fr)}}
+.cand{border:1px solid var(--line);border-radius:10px;background:var(--panel);padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.cand.picked{border:2px solid var(--brand);padding:17px;box-shadow:0 1px 3px rgba(22,122,95,.14)}
+.cand-h{display:flex;gap:12px;align-items:center;min-width:0}
+.pav{width:46px;height:46px;border-radius:50%;overflow:hidden;flex:none;background:var(--panel-2)}
+.pav svg{display:block;width:100%;height:100%}
+.cand .nm{font-size:15.5px;font-weight:600;line-height:1.2}
+.cand .sp{font-size:12.5px;color:var(--brand);font-weight:500}
+.match{display:flex;align-items:baseline;gap:7px;padding-bottom:11px;border-bottom:1px solid var(--line)}
+.match b{font-family:var(--f-serif);font-size:25px;font-weight:600;line-height:1}
+.match span{font-size:12px;color:var(--ink-3)}
+.why{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:7px;font-size:13.5px;color:var(--ink-2);flex:1}
+.why li{display:grid;grid-template-columns:14px minmax(0,1fr);gap:9px;align-items:start}
+.why li svg{margin-top:3px;flex:none}
+.why li.pro svg{color:var(--brand)}
+.why li.con svg{color:var(--amber)}
+.cand .facts{display:flex;gap:14px;font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);flex-wrap:wrap}
+
+.scope{margin-top:16px}
+.scope-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:9px;overflow:hidden;margin-bottom:16px}
+.sc{background:var(--panel);padding:14px 16px}
+.sc .k{font-size:11.5px;color:var(--ink-3);font-family:var(--f-mono)}
+.sc .v{font-family:var(--f-serif);font-size:21px;font-weight:600;margin-top:3px;line-height:1.1}
+.sc .v small{font-family:var(--f-ui);font-size:12.5px;font-weight:400;color:var(--ink-2)}
+@media (max-width:700px){.scope-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.dlist{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.dlist li{display:grid;grid-template-columns:20px minmax(0,1fr) auto;gap:12px;align-items:center;font-size:14px;padding:9px 0;border-bottom:1px dashed var(--line)}
+.dlist li:last-child{border-bottom:0}
+.dlist .dn{font-family:var(--f-mono);font-size:12px;color:var(--ink-3)}
+.dlist .dd{font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);white-space:nowrap}
+
+/* ---- Ejecución ---- */
+.exec-top{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:9px;overflow:hidden;margin-bottom:16px}
+@media (max-width:700px){.exec-top{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.wk{display:flex;align-items:center;gap:10px;margin-bottom:16px;font-size:13px;color:var(--ink-2)}
+.wk .trk{flex:1;min-width:80px}
+.deliv{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
+.dv{border:1px solid var(--line);border-radius:10px;background:var(--panel);overflow:hidden}
+.dv.review{border-color:var(--amber-line)}
+.dv-h{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:14px;align-items:center;padding:16px 18px}
+.dv.review .dv-h{background:var(--amber-soft)}
+.dv.done .dv-h{background:var(--panel)}
+.dv .mk{width:28px;height:28px;border-radius:7px;display:grid;place-items:center;font-family:var(--f-mono);font-size:12.5px;font-weight:500;border:1px solid var(--line-2);background:var(--panel-2);color:var(--ink-2)}
+.dv.done .mk{background:var(--brand);border-color:var(--brand);color:#fff}
+.dv.review .mk{background:var(--amber);border-color:var(--amber);color:#fff}
+.dv .tt{font-size:15.5px;font-weight:600;line-height:1.25}
+.dv .ds{font-size:13.5px;color:var(--ink-2);margin-top:3px}
+.dv-b{padding:0 18px 16px;border-top:1px solid var(--line);padding-top:14px;margin-top:0}
+.tasks{list-style:none;margin:0 0 14px;padding:0;display:flex;flex-direction:column;gap:6px}
+.tasks li{display:grid;grid-template-columns:15px minmax(0,1fr);gap:10px;font-size:13.5px;color:var(--ink-2);align-items:start}
+.tasks li svg{margin-top:3px;flex:none}
+.tasks li.ok svg{color:var(--brand)}
+.tasks li.pend svg{color:var(--ink-3)}
+.att{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px}
+.att a,.att span{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line-2);border-radius:7px;padding:6px 10px;font-family:var(--f-mono);font-size:11.5px;color:var(--ink-2);background:var(--panel-2);text-decoration:none}
+.att svg{color:var(--ink-3);flex:none}
+.hours{font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);margin:0 0 14px}
+.feed{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:13px}
+.feed li{display:grid;grid-template-columns:9px minmax(0,1fr);gap:13px;position:relative}
+.feed li::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--brand);margin-top:6px;z-index:1}
+.feed li:not(:last-child)::after{content:"";position:absolute;left:4px;top:15px;bottom:-13px;width:1px;background:var(--line)}
+.feed .ft{font-size:13.5px}
+.feed .fd{font-family:var(--f-mono);font-size:11px;color:var(--ink-3);margin-top:1px}
+.msgs{list-style:none;margin:0 0 12px;padding:0;display:flex;flex-direction:column;gap:9px;max-height:280px;overflow-y:auto}
+.m{font-size:13.5px;padding:9px 11px;border-radius:8px;background:var(--panel-2);border:1px solid var(--line);max-width:94%}
+.m.me{background:var(--brand-soft);border-color:var(--brand-line);align-self:flex-end}
+.m b{display:block;font-size:11px;color:var(--ink-3);font-weight:600;margin-bottom:2px}
+.m.sys{background:none;border:0;padding:1px;color:var(--ink-3);font-family:var(--f-mono);font-size:11px;max-width:none;text-align:center}
+
+/* ---- Seguimiento ---- */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:16px}
+@media (max-width:820px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{background:var(--panel);padding:17px 18px}
+.kpi .k{font-size:12px;color:var(--ink-2);min-height:2.6em}
+.kpi .v{font-family:var(--f-serif);font-size:34px;font-weight:600;line-height:1.05;margin-top:6px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.kpi .v small{font-family:var(--f-ui);font-size:14px;font-weight:400;color:var(--ink-2);letter-spacing:0}
+.kpi .d{font-family:var(--f-mono);font-size:11px;color:var(--ink-3);margin-top:4px}
+.kpi .d.up{color:var(--brand)}
+
+.chartbox{overflow-x:auto}
+.chartbox svg{display:block;min-width:460px;width:100%;height:auto}
+.cmp{display:flex;flex-direction:column;gap:14px}
+.cmpr{display:grid;grid-template-columns:minmax(130px,210px) minmax(0,1fr) 52px;gap:14px;align-items:center;font-size:13.5px}
+.cmpr .cl b{display:block;font-weight:600;font-size:13.5px}
+.cmpr .cl span{font-size:11.5px;color:var(--ink-3);font-family:var(--f-mono)}
+.btrk{height:22px;background:var(--panel-2);border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.btrk i{display:block;height:100%;background:var(--brand-line)}
+.btrk i.you{background:var(--brand)}
+.cmpr .cv{font-family:var(--f-mono);font-size:13px;text-align:right;font-variant-numeric:tabular-nums}
+@media (max-width:620px){.cmpr{grid-template-columns:minmax(0,1fr) 52px}.cmpr .btrk{grid-column:1/-1;order:3}}
+
+.tblwrap{overflow-x:auto}
+table.data{width:100%;border-collapse:collapse;font-size:13.5px;min-width:480px}
+table.data th,table.data td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line)}
+table.data thead th{font-size:12px;color:var(--ink-2);font-weight:600;border-bottom:1px solid var(--line-2)}
+table.data td.n{font-family:var(--f-mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+table.data td.dl{font-family:var(--f-mono);color:var(--brand);font-weight:500;white-space:nowrap}
+table.data tbody tr:last-child td{border-bottom:0}
+
+.empty{border:1.5px dashed var(--line-2);border-radius:10px;padding:46px 22px;text-align:center;display:flex;flex-direction:column;align-items:center;gap:13px;background:var(--panel)}
+.empty .ic{color:var(--ink-3)}
+.empty b{font-family:var(--f-serif);font-size:19px;font-weight:600}
+.empty p{margin:0;color:var(--ink-2);max-width:44ch;font-size:14px}
+
+.foot{border-top:1px solid var(--line);margin-top:8px}
+.foot .wrap{padding-block:18px 26px}
+.foot p{margin:0;font-size:12px;color:var(--ink-3);max-width:90ch}
+.foot p + p{margin-top:5px}
+</style>
+</head>
+<body>
+
+<header class="brandbar">
+  <div class="wrap">
+    <div class="logo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M9.5 14.5 14.5 9.5" stroke="#6FD3B0" stroke-width="1.7" stroke-linecap="round"/><path d="M12.2 6.8 14 5a4.2 4.2 0 0 1 5.9 5.9l-1.8 1.8" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/><path d="M11.8 17.2 10 19a4.2 4.2 0 0 1-5.9-5.9l1.8-1.8" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>
+      Linko
+    </div>
+    <div class="bb-right">
+      <span class="demo">PROTOTIPO · DATOS DE DEMOSTRACIÓN</span>
+      <span class="acct"><span class="ava">JD</span><b>Jose Delgado</b><i>· Oficina Jurídica Delgado</i></span>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs" aria-label="Etapas de la plataforma"><div class="wrap" id="tabs" role="tablist"></div></nav>
+
+<main><div class="wrap" id="view"></div></main>
+
+<footer class="foot"><div class="wrap">
+  <p>Prototipo de demostración para el curso de emprendimiento. La empresa, las personas, los archivos y las cifras de seguimiento son ficticios. Los archivos que cargue no salen de su navegador y no se envían a ningún servidor.</p>
+  <p>Benchmarks citados: Pfeiffer Consulting para Adobe (2024), dato publicado por el proveedor; Brynjolfsson, Li y Raymond (2025), “Generative AI at Work”, Quarterly Journal of Economics, 5.179 agentes de soporte.</p>
+</div></footer>
+
+<script>
+(function(){
+"use strict";
+
+/* ============ Iconos ============ */
+const I={
+  up:'<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5"/><path d="M4 16v2.5A1.5 1.5 0 0 0 5.5 20h13a1.5 1.5 0 0 0 1.5-1.5V16"/></svg>',
+  doc:'<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M14 3H7a1.5 1.5 0 0 0-1.5 1.5v15A1.5 1.5 0 0 0 7 21h10a1.5 1.5 0 0 0 1.5-1.5V7.5z"/><path d="M14 3v4.5h4.5"/></svg>',
+  x:'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+  lock:'<svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4.5" y="10" width="15" height="10.5" rx="1.8"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>',
+  chk:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12.5l5 5 10-11"/></svg>',
+  dot:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="5"/></svg>',
+  warn:'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 7.5v6M12 17h.01"/><circle cx="12" cy="12" r="9"/></svg>',
+  filt:'<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 5.5h17l-6.5 7.5v6l-4 2v-8z"/></svg>',
+  clip:'<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 11.5l-8 8a5 5 0 0 1-7-7l8.5-8.5a3.3 3.3 0 0 1 4.7 4.7L9.5 17.4a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/></svg>',
+  big:'<svg width="38" height="38" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 20.5V9l6-4.5 6 4.5v11.5M9.5 20.5v-5h4v5"/><path d="M15.5 12.5h5v8h-5"/></svg>'
+};
+
+/* ============ Datos de demostración ============ */
+const COMPANY={razon:"Oficina Jurídica Delgado S.A.S.",nit:"901.248.773-4",ciiu:"6910 — Actividades jurídicas",empleados:"9",anios:"18",ciudad:"Bogotá"};
+
+const SEED_FILES=[
+  {n:"expedientes_activos.csv",s:"2,4 MB"},
+  {n:"facturacion_DIAN_2026.xlsx",s:"1,1 MB"},
+  {n:"agenda_audiencias.pdf",s:"482 KB"},
+  {n:"inventario_archivo_fisico.docx",s:"96 KB"}
+];
+
+const DIMS=[
+  {k:"Datos y registros",v:38},
+  {k:"Procesos digitales",v:42},
+  {k:"Herramientas",v:55},
+  {k:"Equipo y adopción",v:44},
+  {k:"Canal con clientes",v:61}
+];
+
+const FINDS=[
+  {t:"El 72% de los expedientes activos no tiene copia digital.",s:"inventario_archivo_fisico.docx"},
+  {t:"Buscar un expediente toma 14 minutos en promedio.",s:"expedientes_activos.csv · registro de consultas"},
+  {t:"La facturación se lleva en dos archivos que no se concilian entre sí.",s:"facturacion_DIAN_2026.xlsx"},
+  {t:"4 de 9 personas usan herramientas digitales a diario.",s:"formulario de registro"}
+];
+
+const PILOTS=[
+  {k:"docs",n:"Organización de documentos",h:12,save:"9,0",unit:"h/semana",d:"12 h/semana hoy. Ahorro estimado con el benchmark de documentos (75%).",spec:"Automatización de documentos"},
+  {k:"interna",n:"Organización interna",h:8,save:"—",unit:"sin referencia",d:"8 h/semana hoy. No hay benchmark publicado; se mediría en el piloto.",spec:"Organización digital de procesos"},
+  {k:"clientes",n:"Atención a clientes",h:5,save:"0,6–1,3",unit:"h/semana",d:"5 h/semana hoy. Ahorro estimado con el benchmark de soporte (12–25%).",spec:"Atención al cliente con IA"}
+];
+
+const P={
+  valentina:{id:"valentina",nm:"Valentina Rojas",sh:"Valentina",sp:"Automatización de documentos",exp:"3 años",disp:"Por proyecto",proj:4,rt:"4,8",rv:9,
+    look:{sk:"#E3B892",hr:"long",hc:"#2B1D16",sh2:"#167A5F",bg:"#E4EDE8"}},
+  maria:{id:"maria",nm:"María Fernanda Ruiz",sh:"María",sp:"Automatización de documentos",exp:"5 años",disp:"Por proyecto",proj:8,rt:"4,9",rv:15,
+    look:{sk:"#8A5A3B",hr:"curly",hc:"#1F1A17",sh2:"#2F5D50",bg:"#E8EAE2"}},
+  laura:{id:"laura",nm:"Laura Castaño",sh:"Laura",sp:"Organización digital de procesos",exp:"Estudiante",disp:"Medio tiempo",proj:1,rt:"4,6",rv:2,
+    look:{sk:"#F0D2B6",hr:"bun",hc:"#6B4A2F",sh2:"#8C6A4F",bg:"#EDE6DE"}},
+  tomas:{id:"tomas",nm:"Tomás Escobar",sh:"Tomás",sp:"Automatización de documentos",exp:"4 años",disp:"Por proyecto",proj:6,rt:"4,7",rv:10,
+    look:{sk:"#C99A74",hr:"short",hc:"#1F1A17",sh2:"#3A4A57",bg:"#E4EDE8",gl:true}},
+  isabela:{id:"isabela",nm:"Isabela Morales",sh:"Isabela",sp:"Organización digital de procesos",exp:"2 años",disp:"Medio tiempo",proj:3,rt:"4,6",rv:5,
+    look:{sk:"#E8C3A0",hr:"long",hc:"#4A3226",sh2:"#167A5F",bg:"#E8EAE2"}},
+  daniel:{id:"daniel",nm:"Daniel Gómez",sh:"Daniel",sp:"Atención al cliente con IA",exp:"3 años",disp:"Medio tiempo",proj:2,rt:"4,4",rv:4,
+    look:{sk:"#A8754F",hr:"buzz",hc:"#1F1A17",sh2:"#545E66",bg:"#EDE6DE"}}
+};
+
+const TERNA_A=[
+  {id:"valentina",m:94,why:[
+    ["pro","Digitalizó el archivo de una notaría, el caso más parecido al suyo"],
+    ["pro","Su especialidad coincide con el piloto priorizado"],
+    ["pro","Disponible por proyecto desde la próxima semana"]]},
+  {id:"maria",m:89,why:[
+    ["pro","5 años digitalizando archivo legal y contable"],
+    ["pro","8 proyectos completados, la valoración más alta del grupo"],
+    ["con","Agenda comprometida las dos primeras semanas"]]},
+  {id:"tomas",m:81,why:[
+    ["pro","Convierte archivos escaneados en bases consultables"],
+    ["pro","Trabajó con una constructora de tamaño similar"],
+    ["con","Sin experiencia previa en el sector jurídico"]]}
+];
+const TERNA_B=[
+  {id:"isabela",m:68,why:[
+    ["pro","Define convenciones de archivo y las deja documentadas"],
+    ["con","Su especialidad es procesos, no digitalización"],
+    ["con","Medio tiempo: el piloto tomaría más semanas"]]},
+  {id:"laura",m:61,why:[
+    ["pro","Buen acompañamiento a equipos que no usan tecnología"],
+    ["con","Perfil de estudiante, un proyecto completado"],
+    ["con","No ha trabajado con volúmenes de archivo como el suyo"]]},
+  {id:"daniel",m:54,why:[
+    ["pro","Disponible de inmediato"],
+    ["con","Su especialidad es atención al cliente, no documentos"],
+    ["con","Corresponde al piloto 3, no al priorizado"]]}
+];
+
+const DELIVS=[
+  {n:"Inventario del archivo físico",d:"Conteo y clasificación de expedientes por tipo, cliente y año.",
+   tasks:[["ok","Recorrido del archivo y conteo por estantería"],["ok","Clasificación por tipo de proceso"],["ok","Identificación de expedientes duplicados"]],
+   files:["inventario_expedientes.xlsx"],h:"12,5",fecha:"3 oct"},
+  {n:"Estructura de carpetas y nombres",d:"Convención de nombres por cliente, año y tipo de documento, documentada para el equipo.",
+   tasks:[["ok","Propuesta de convención de nombres"],["ok","Revisión con la secretaria del despacho"],["ok","Guía en PDF para el equipo"]],
+   files:["convencion_nombres.pdf","estructura_carpetas.png"],h:"8,0",fecha:"14 oct"},
+  {n:"Digitalización del archivo activo",d:"Escaneo, reconocimiento de texto y carga de los expedientes en uso.",
+   tasks:[["ok","Escaneo de 4.820 folios"],["ok","Reconocimiento de texto (OCR) y verificación de muestra"],["ok","Carga al repositorio con búsqueda por contenido"],["pend","Revisión final del despacho"]],
+   files:["lote_1_expedientes.zip","reporte_ocr.pdf"],h:"31,5",fecha:"7 nov"},
+  {n:"Capacitación del equipo",d:"Dos sesiones con el equipo y guía de consulta rápida.",
+   tasks:[["pend","Sesión 1: búsqueda y consulta"],["pend","Sesión 2: carga de documentos nuevos"],["pend","Guía de consulta rápida"]],
+   files:[],h:"0,0",fecha:"21 nov"}
+];
+
+const TREND=[12.0,11.4,9.8,8.1,6.4,5.0,3.9,3.2];
+
+const SUBPROC=[
+  ["Buscar un expediente","14 min","40 s","−95%"],
+  ["Archivar documentos nuevos","6,0 h/sem","1,5 h/sem","−75%"],
+  ["Preparar el informe mensual","4,0 h","1,2 h","−70%"],
+  ["Responder una solicitud de cliente","35 min","12 min","−66%"]
+];
+
+const TABS=[
+  {v:"diagnostico",l:"Registro y diagnóstico"},
+  {v:"asignacion",l:"Asignación"},
+  {v:"ejecucion",l:"Ejecución"},
+  {v:"seguimiento",l:"Seguimiento"}
+];
+const VIEWS=TABS.map(t=>t.v);
+
+/* ============ Estado ============ */
+function fresh(){
+  return {
+    view:"diagnostico",
+    files:SEED_FILES.map(f=>({...f,id:Math.random().toString(36).slice(2)})),
+    tyc:false, auth:false, phase:"form", astep:0,
+    terna:"A", picked:null, approved:false,
+    delivs:DELIVS.map((d,i)=>({...d,st:i<2?"done":i===2?"review":"pend"})),
+    changeOpen:false,
+    msgs:[
+      {f:"sys",t:"Piloto iniciado · 1 de octubre"},
+      {f:"pro",t:"Buenos días, don Jose. Terminé el inventario del archivo y le dejé el Excel con el conteo por año. Son 1.340 expedientes activos."},
+      {f:"me",t:"Gracias Valentina. ¿Los de 2015 hacia atrás también entran?"},
+      {f:"pro",t:"Esos quedan en el lote 2. Primero los activos, que son los que consultan a diario."}
+    ]
+  };
+}
+let S=fresh();
+
+/* ============ Utilidades ============ */
+const $=s=>document.querySelector(s);
+const esc=t=>String(t).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const done=()=>S.delivs.filter(d=>d.st==="done").length;
+const allDone=()=>done()===S.delivs.length;
+
+function portrait(l){
+  const back=l.hr==="long"?'<path d="M31 46C29 28 39 22 50 22C61 22 71 28 69 46L71 76C64 80 36 80 29 76Z" fill="'+l.hc+'"/>':"";
+  const front={
+    short:'<path d="M34 44C33 30 41 24 50 24C60 24 67 30 66 44C63 36 57 32 50 33C43 32 37 36 34 44Z" fill="'+l.hc+'"/>',
+    long:'<path d="M35 43C35 31 42 26 50 26C58 26 65 31 65 43C60 35 55 33 50 33C45 33 40 36 35 43Z" fill="'+l.hc+'"/>',
+    bun:'<circle cx="50" cy="21" r="7" fill="'+l.hc+'"/><path d="M34 43C34 31 41 26 50 26C59 26 66 31 66 43C61 36 56 33 50 33C44 33 39 36 34 43Z" fill="'+l.hc+'"/>',
+    buzz:'<path d="M35 40C36 31 42 27 50 27C58 27 64 31 65 40C60 35 55 34 50 34C45 34 40 35 35 40Z" fill="'+l.hc+'"/>',
+    curly:'<g fill="'+l.hc+'"><circle cx="37" cy="35" r="7"/><circle cx="44" cy="29" r="7.5"/><circle cx="52" cy="28" r="7.5"/><circle cx="60" cy="31" r="7"/><circle cx="65" cy="38" r="5.5"/><circle cx="35" cy="42" r="4.5"/></g>'
+  }[l.hr];
+  const gl=l.gl?'<g fill="none" stroke="#2D2D2D" stroke-width="1.2"><circle cx="44.5" cy="46" r="4.2"/><circle cx="55.5" cy="46" r="4.2"/><path d="M48.7 46H51.3"/></g>':"";
+  return '<svg viewBox="0 0 100 100" aria-hidden="true" focusable="false"><rect width="100" height="100" fill="'+l.bg+'"/>'+back+
+    '<path d="M12 100C12 77 30 69 50 69C70 69 88 77 88 100Z" fill="'+l.sh2+'"/>'+
+    '<rect x="44" y="58" width="12" height="14" rx="4" fill="'+l.sk+'"/><ellipse cx="50" cy="45" rx="15.5" ry="18.5" fill="'+l.sk+'"/>'+front+
+    '<circle cx="44.5" cy="46" r="1.5" fill="#2D2D2D"/><circle cx="55.5" cy="46" r="1.5" fill="#2D2D2D"/>'+
+    '<path d="M45.5 53.5Q50 56.5 54.5 53.5" stroke="#2D2D2D" stroke-width="1.3" fill="none" stroke-linecap="round"/>'+gl+'</svg>';
+}
+const pav=(p,sz)=>'<span class="pav" style="width:'+sz+'px;height:'+sz+'px">'+portrait(p.look)+'</span>';
+
+function go(v){
+  if(!VIEWS.includes(v)) return;
+  S.view=v;
+  try{ if(location.hash.slice(1)!==v) location.hash=v; }catch(e){}
+  render();
+  window.scrollTo({top:0,behavior:"auto"});
+}
+
+/* ============ Pestañas ============ */
+function stageDone(v){
+  if(v==="diagnostico") return S.phase==="result";
+  if(v==="asignacion") return S.approved;
+  if(v==="ejecucion") return allDone();
+  return false;
+}
+function renderTabs(){
+  $("#tabs").innerHTML=TABS.map((t,i)=>
+    '<button class="tab'+(stageDone(t.v)?" done":"")+'" role="tab" data-go="'+t.v+'" aria-selected="'+(t.v===S.view)+'">'+
+    '<span class="tn">'+(stageDone(t.v)?"✓":(i+1))+'</span>'+t.l+'</button>').join("");
+}
+
+/* ============ 1 · Registro y diagnóstico ============ */
+function vDiagnostico(){
+  if(S.phase==="result") return diagResult();
+  const analyzing=S.phase==="analyzing";
+  const steps=["Leyendo los archivos cargados","Detectando procesos y tiempos","Calculando madurez y priorizando pilotos"];
+  const ready=S.tyc&&S.auth&&S.files.length>0;
+
+  return '<div class="phead">'+
+    '<p class="eyebrow">ETAPA 1 DE 4</p>'+
+    '<h1>Registro y diagnóstico</h1>'+
+    '<p class="sub">Linko no le pregunta qué necesita. Le pedimos los datos de su operación y los archivos con los que ya trabaja, y de ahí sale el diagnóstico.</p></div>'+
+
+  '<div class="cols"><div>'+
+    '<section class="card">'+
+      '<div class="card-h"><h2>Datos de la empresa</h2><p>Registro mercantil</p></div>'+
+      '<p class="lead">Tomamos estos campos del registro para no pedirle lo que ya existe.</p>'+
+      '<div class="fgrid">'+
+        fld("Razón social",COMPANY.razon)+fld("NIT",COMPANY.nit)+fld("Actividad (CIIU)",COMPANY.ciiu)+
+        fld("Personas en nómina",COMPANY.empleados)+fld("Años de operación",COMPANY.anios)+fld("Ciudad",COMPANY.ciudad)+
+      '</div>'+
+    '</section>'+
+
+    '<section class="card">'+
+      '<div class="card-h"><h2>Datos de operación</h2><p>'+S.files.length+' archivo'+(S.files.length===1?"":"s")+'</p></div>'+
+      '<p class="lead">Cargue los archivos con los que trabaja a diario: facturación, inventarios, agenda, listados de clientes. No necesita prepararlos.</p>'+
+      '<div class="drop" id="drop" tabindex="0" role="button" aria-label="Cargar archivos">'+
+        '<span class="ic">'+I.up+'</span><b>Arrastre sus archivos aquí</b>'+
+        '<span>Excel, CSV, PDF o Word. En este prototipo los archivos no salen de su navegador.</span>'+
+        '<span class="btn sm" aria-hidden="true">Buscar en el equipo</span>'+
+      '</div>'+
+      '<input type="file" id="fin" multiple hidden>'+
+      (S.files.length?'<ul class="files">'+S.files.map(f=>
+        '<li class="file"><span class="fi">'+I.doc+'</span>'+
+        '<span class="fname">'+esc(f.n)+'</span>'+
+        '<span class="fmeta">'+esc(f.s)+'</span>'+
+        '<button class="fx" data-del="'+f.id+'" aria-label="Quitar '+esc(f.n)+'">'+I.x+'</button></li>').join("")+'</ul>':"")+
+    '</section>'+
+
+    '<section class="card">'+
+      '<h2 style="margin-bottom:14px">Autorizaciones</h2>'+
+      '<div class="consents">'+
+        '<label class="cb" for="tyc"><input type="checkbox" id="tyc" '+(S.tyc?"checked":"")+'><span>Acepto los <b>Términos y Condiciones</b> y la Política de Tratamiento de Datos Personales.</span></label>'+
+        '<label class="cb" for="auth"><input type="checkbox" id="auth" '+(S.auth?"checked":"")+'><span>Autorizo a Linko a <b>analizar los archivos cargados</b> con el único fin de generar el diagnóstico de mi empresa.</span></label>'+
+      '</div>'+
+      (analyzing
+        ? '<div class="analyzing" style="margin-top:18px">'+steps.map((s,i)=>
+            '<div class="astep'+(i<=S.astep?" on":"")+'">'+(i<S.astep?'<span style="color:var(--brand)">'+I.chk+'</span>':i===S.astep?'<span class="spin"></span>':'<span style="width:14px"></span>')+'<b>'+s+'</b></div>').join("")+'</div>'
+        : '<div class="rowb" style="margin-top:18px;align-items:center">'+
+            '<button class="btn pri" data-act="analyze" '+(ready?"":"disabled")+'>Generar diagnóstico</button>'+
+            (!ready?'<span style="font-size:13px;color:var(--ink-3)">Marque las dos autorizaciones para continuar.</span>':"")+
+          '</div>')+
+    '</section>'+
+  '</div>'+
+
+  '<aside><div class="conf">'+
+    '<div class="conf-h">'+I.lock+'<b>Qué pasa con sus archivos</b></div>'+
+    '<ul>'+
+      cli("<b>Cifrados</b> en el envío y mientras están guardados.")+
+      cli("Solo el <b>equipo de diagnóstico</b> de Linko los abre. Queda registro de cada acceso.")+
+      cli("El <b>especialista asignado nunca recibe los archivos originales</b>, solo el resumen del diagnóstico.")+
+      cli("Puede <b>eliminarlos cuando quiera</b>. Al cerrar el piloto se borran a los 30 días.")+
+      cli("Tratamiento conforme a la <b>Ley 1581 de 2012</b> de protección de datos.")+
+    '</ul>'+
+    '<div class="log"><table><tbody>'+
+      '<tr><td>Carga inicial · 4 archivos</td><td>hoy 09:12</td></tr>'+
+      '<tr><td>Equipo de diagnóstico · lectura</td><td>pendiente</td></tr>'+
+    '</tbody></table></div>'+
+  '</div></aside></div>';
+}
+const fld=(l,v)=>'<div class="field"><label>'+esc(l)+'</label><input type="text" value="'+esc(v)+'" readonly></div>';
+const cli=h=>'<li>'+I.chk+'<span>'+h+'</span></li>';
+
+function diagResult(){
+  const score=46, C=2*Math.PI*52, off=C*(1-score/100);
+  return '<div class="phead">'+
+    '<p class="eyebrow">ETAPA 1 DE 4 · COMPLETADA</p>'+
+    '<h1>Diagnóstico de su empresa</h1>'+
+    '<p class="sub">Resultado del análisis de 4 archivos y los datos del registro. Ninguna de estas conclusiones viene de una autoevaluación.</p></div>'+
+
+  '<section class="card">'+
+    '<div class="score">'+
+      '<div class="ring"><svg width="118" height="118" viewBox="0 0 118 118" aria-hidden="true">'+
+        '<circle cx="59" cy="59" r="52" fill="none" stroke="var(--line)" stroke-width="11"/>'+
+        '<circle cx="59" cy="59" r="52" fill="none" stroke="var(--brand)" stroke-width="11" stroke-linecap="round" stroke-dasharray="'+C.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'"/>'+
+      '</svg><span class="rv"><b>'+score+'</b><span>DE 100</span></span></div>'+
+      '<div class="score-t"><b>Madurez digital: en desarrollo</b>'+
+      '<p>Su empresa ya usa herramientas digitales en los bordes del negocio, pero el trabajo central sigue en papel. Ahí está el mayor potencial.</p></div>'+
+    '</div>'+
+    '<div class="dims">'+DIMS.map(d=>
+      '<div class="dim"><span class="dt">'+esc(d.k)+'</span><span class="trk"><i style="width:'+d.v+'%"></i></span><span class="dv">'+d.v+'</span></div>').join("")+
+    '</div>'+
+  '</section>'+
+
+  '<section class="card"><h2 style="margin-bottom:14px">Lo que encontramos en sus archivos</h2>'+
+    '<ul class="finds">'+FINDS.map(f=>
+      '<li><div><p>'+esc(f.t)+'</p><div class="src">Fuente: '+esc(f.s)+'</div></div></li>').join("")+'</ul>'+
+  '</section>'+
+
+  '<section class="card">'+
+    '<div class="card-h"><h2>Pilotos propuestos</h2><p>Ordenados por el tiempo que recuperaría</p></div>'+
+    '<p class="lead">Un piloto a la vez. Empezamos por el de mayor retorno y los demás quedan en cola.</p>'+
+    '<ul class="pilots">'+PILOTS.map((p,i)=>
+      '<li class="pilot'+(i===0?" first":"")+'"><span class="rk">'+(i+1)+'</span>'+
+      '<div><b>'+esc(p.n)+'</b><div class="pd">'+esc(p.d)+'</div></div>'+
+      '<div class="pv"><b>'+esc(p.save)+'</b><span>'+esc(p.unit)+'</span></div></li>').join("")+'</ul>'+
+    '<div class="rowb" style="margin-top:18px">'+
+      '<button class="btn pri" data-go="asignacion">Ver especialistas para el piloto 1</button>'+
+      '<button class="btn" data-act="redo">Cargar más archivos</button>'+
+    '</div>'+
+  '</section>';
+}
+
+/* ============ 2 · Asignación ============ */
+function vAsignacion(){
+  if(S.phase!=="result") return emptyState("Complete el diagnóstico","Los especialistas se proponen a partir de los procesos que detectemos en sus archivos.","diagnostico","Ir al diagnóstico");
+  const list=S.terna==="A"?TERNA_A:TERNA_B;
+  const pick=S.picked?P[S.picked]:null;
+
+  return '<div class="phead">'+
+    '<p class="eyebrow">ETAPA 2 DE 4</p>'+
+    '<h1>Asignación</h1>'+
+    '<p class="sub">Linko revisó 47 especialistas disponibles y le propone tres para el piloto de documentos. Usted elige entre estos tres.</p></div>'+
+
+  '<div class="curate">'+I.filt+'<span>La selección se hace con el diagnóstico, no con una búsqueda abierta: filtramos por especialidad, por experiencia en casos parecidos al suyo y por disponibilidad real en las próximas seis semanas. <b>Si ninguno le convence, puede pedir otra terna.</b></span></div>'+
+
+  '<div class="terna">'+list.map(c=>{
+    const p=P[c.id], sel=S.picked===c.id;
+    return '<article class="cand'+(sel?" picked":"")+'">'+
+      '<div class="cand-h">'+pav(p,46)+'<div style="min-width:0"><div class="nm">'+esc(p.nm)+'</div><div class="sp">'+esc(p.sp)+'</div></div></div>'+
+      '<div class="match"><b>'+c.m+'%</b><span>de coincidencia con su diagnóstico</span></div>'+
+      '<ul class="why">'+c.why.map(w=>'<li class="'+w[0]+'">'+(w[0]==="pro"?I.chk:I.warn)+'<span>'+esc(w[1])+'</span></li>').join("")+'</ul>'+
+      '<div class="facts"><span>'+esc(p.exp)+'</span><span>'+p.proj+' proyectos</span><span>★ '+esc(p.rt)+' ('+p.rv+')</span></div>'+
+      '<button class="btn '+(sel?"":"pri")+'" data-act="pick" data-id="'+c.id+'" '+(S.approved?"disabled":"")+'>'+(sel?"Elegido ✓":"Elegir a "+esc(p.sh))+'</button>'+
+    '</article>';
+  }).join("")+'</div>'+
+
+  (S.approved?"":'<div class="rowb" style="margin-top:14px"><button class="linkb" data-act="swap">Ninguno me convence, ver otra terna</button></div>')+
+
+  (pick?'<section class="card scope">'+
+    '<div class="card-h"><h2>Propuesta de piloto</h2><p>'+esc(pick.nm)+'</p></div>'+
+    '<p class="lead">Esto es lo que se compromete antes de empezar. Nada avanza sin su aprobación.</p>'+
+    '<div class="scope-grid">'+
+      sc("PILOTO","Documentos",'<small>Organización del archivo</small>')+
+      sc("PLAZO","6 <small>semanas</small>","")+
+      sc("ENTREGABLES","4 <small>con visto bueno</small>","")+
+      sc("DEDICACIÓN","52 <small>horas estimadas</small>","")+
+    '</div>'+
+    '<h3>Entregables</h3>'+
+    '<ul class="dlist">'+DELIVS.map((d,i)=>
+      '<li><span class="dn">'+(i+1)+'</span><span>'+esc(d.n)+'</span><span class="dd">'+esc(d.fecha)+'</span></li>').join("")+'</ul>'+
+    (S.approved
+      ? '<div class="rowb" style="margin-top:18px;align-items:center"><span class="chip ok">'+I.chk+' Propuesta aprobada</span><button class="btn" data-go="ejecucion">Ir a la ejecución</button></div>'
+      : '<div class="rowb" style="margin-top:18px"><button class="btn pri" data-act="approve">Aprobar propuesta y empezar</button><button class="btn" data-act="swap">Ver otra terna</button></div>')+
+  '</section>':"");
+}
+const sc=(k,v,x)=>'<div class="sc"><div class="k">'+k+'</div><div class="v">'+v+x+'</div></div>';
+
+/* ============ 3 · Ejecución ============ */
+function vEjecucion(){
+  if(!S.approved) return emptyState("Apruebe la propuesta","La ejecución empieza cuando usted aprueba el alcance y el especialista del piloto.","asignacion","Ir a la asignación");
+  const pro=P[S.picked], k=done(), pct=Math.round(k/S.delivs.length*100);
+  const hTot=S.delivs.reduce((a,d)=>a+parseFloat(d.h.replace(",",".")),0);
+
+  return '<div class="phead">'+
+    '<p class="eyebrow">ETAPA 3 DE 4</p>'+
+    '<h1>Ejecución del piloto</h1>'+
+    '<p class="sub">Organización del archivo · '+esc(pro.nm)+' · semana 4 de 6</p></div>'+
+
+  '<div class="exec-top">'+
+    sc("ENTREGABLES",k+" <small>de "+S.delivs.length+" aprobados</small>","")+
+    sc("HORAS REGISTRADAS",hTot.toFixed(1).replace(".",",")+" <small>de 52</small>","")+
+    sc("FOLIOS DIGITALIZADOS","4.820","")+
+    sc("PRÓXIMA ENTREGA","21 <small>de noviembre</small>","")+
+  '</div>'+
+
+  '<div class="wk"><span>Avance</span><span class="trk"><i style="width:'+pct+'%"></i></span><span style="font-family:var(--f-mono);font-size:12px">'+pct+'%</span></div>'+
+
+  '<div class="cols"><div><ul class="deliv">'+S.delivs.map((d,i)=>{
+    const chip=d.st==="done"?'<span class="chip ok">'+I.chk+' Aprobado</span>'
+      :d.st==="review"?'<span class="chip wait">Espera su visto bueno</span>'
+      :'<span class="chip off">Pendiente</span>';
+    const body=(d.st==="pend")?"":'<div class="dv-b">'+
+      '<ul class="tasks">'+d.tasks.map(t=>'<li class="'+t[0]+'">'+(t[0]==="ok"?I.chk:I.dot)+'<span>'+esc(t[1])+'</span></li>').join("")+'</ul>'+
+      (d.files.length?'<div class="att">'+d.files.map(f=>'<span>'+I.clip+esc(f)+'</span>').join("")+'</div>':"")+
+      '<p class="hours">'+esc(d.h)+' h registradas · entregado el '+esc(d.fecha)+'</p>'+
+      (d.st==="review"?(S.changeOpen
+        ? '<div class="field" style="margin-bottom:11px"><label for="chg">¿Qué debe ajustar '+esc(pro.sh)+'?</label><textarea id="chg" placeholder="Por ejemplo: faltan los expedientes de tutela de 2024."></textarea></div><div class="rowb"><button class="btn pri sm" data-act="sendchg">Enviar solicitud</button><button class="btn sm" data-act="cancelchg">Cancelar</button></div>'
+        : '<div class="rowb"><button class="btn pri sm" data-act="ok" data-i="'+i+'">Aprobar entregable</button><button class="btn sm" data-act="openchg">Pedir cambios</button></div>'):"")+
+    '</div>';
+    return '<li class="dv '+d.st+'">'+
+      '<div class="dv-h"><span class="mk">'+(d.st==="done"?"✓":(i+1))+'</span>'+
+      '<div><div class="tt">'+esc(d.n)+'</div><div class="ds">'+esc(d.d)+'</div></div>'+chip+'</div>'+body+'</li>';
+  }).join("")+'</ul>'+
+
+  (allDone()?'<section class="card" style="margin-top:16px;border-color:var(--brand-line);background:var(--brand-soft)">'+
+    '<h2>Piloto entregado</h2><p class="lead" style="margin-bottom:14px">Los cuatro entregables quedaron aprobados. El seguimiento ya tiene las mediciones del antes y el después.</p>'+
+    '<button class="btn pri" data-go="seguimiento">Ver el seguimiento</button></section>':"")+
+  '</div>'+
+
+  '<aside>'+
+    '<section class="card" style="margin-bottom:16px"><h3>Especialista</h3>'+
+      '<div class="cand-h">'+pav(pro,44)+'<div style="min-width:0"><div class="nm" style="font-size:14.5px">'+esc(pro.nm)+'</div><div class="sp">'+esc(pro.sp)+'</div></div></div>'+
+    '</section>'+
+    '<section class="card" style="margin-bottom:16px"><h3>Mensajes</h3>'+
+      '<ul class="msgs" id="msgs">'+msgHTML()+'</ul>'+
+      '<form id="mf"><div class="field"><label for="mi" class="sr">Mensaje</label><textarea id="mi" placeholder="Escribir a '+esc(pro.sh)+'" style="min-height:62px"></textarea></div>'+
+      '<button class="btn sm pri" type="submit" style="margin-top:8px">Enviar</button></form>'+
+    '</section>'+
+    '<section class="card"><h3>Actividad</h3>'+
+      '<ul class="feed">'+
+        fe("Lote 1 cargado al repositorio","7 nov · "+esc(pro.sh))+
+        fe("Reporte de OCR adjuntado","6 nov · "+esc(pro.sh))+
+        fe("Guía de nombres aprobada por el despacho","14 oct · Jose Delgado")+
+        fe("Inventario del archivo entregado","3 oct · "+esc(pro.sh))+
+      '</ul>'+
+    '</section>'+
+  '</aside></div>';
+}
+const fe=(t,d)=>'<li><div><div class="ft">'+t+'</div><div class="fd">'+d+'</div></div></li>';
+function msgHTML(){
+  const pro=P[S.picked]||P.valentina;
+  return S.msgs.map(m=>m.f==="sys"?'<li class="m sys">'+esc(m.t)+'</li>'
+    :'<li class="m'+(m.f==="me"?" me":"")+'"><b>'+(m.f==="me"?"Usted":esc(pro.sh))+'</b>'+esc(m.t)+'</li>').join("");
+}
+
+/* ============ 4 · Seguimiento ============ */
+function vSeguimiento(){
+  if(!allDone()) return emptyState("El piloto sigue en curso","El seguimiento se abre cuando los cuatro entregables están aprobados. Faltan "+(S.delivs.length-done())+".","ejecucion","Ir a la ejecución");
+
+  return '<div class="phead">'+
+    '<p class="eyebrow">ETAPA 4 DE 4</p>'+
+    '<h1>Seguimiento</h1>'+
+    '<p class="sub">Medición del proceso antes y después del piloto, comparada con la referencia publicada. Todas las cifras de esta pantalla son de demostración.</p></div>'+
+
+  '<div class="kpis">'+
+    kpi("Horas recuperadas por semana","8,8","",'de 12,0 h a 3,2 h',"up")+
+    kpi("Reducción del tiempo del proceso","73","%",'referencia publicada: 75%',"up")+
+    kpi("Personas usando el sistema","7","<small> de 9</small>",'antes: 4 de 9',"up")+
+    kpi("Tiempo medio de búsqueda","40","<small> s</small>",'antes: 14 min',"up")+
+  '</div>'+
+
+  '<section class="card">'+
+    '<div class="card-h"><h2>Horas semanales en el proceso</h2><p>Semanas 1 a 8 del piloto</p></div>'+
+    '<div class="chartbox">'+trend()+'</div>'+
+  '</section>'+
+
+  '<section class="card">'+
+    '<div class="card-h"><h2>Comparación con el benchmark</h2><p>Reducción del tiempo del proceso</p></div>'+
+    '<p class="lead">El resultado de su piloto frente al promedio de la plataforma y a la referencia publicada para tareas con documentos.</p>'+
+    '<div class="cmp">'+
+      bar("Su empresa","Oficina Jurídica Delgado",73,true)+
+      bar("Promedio en Linko","12 pilotos de documentos · demo",61,false)+
+      bar("Referencia publicada","Adobe / Pfeiffer, 2024 · dato del proveedor",75,false)+
+    '</div>'+
+    '<p class="hours" style="margin:16px 0 0">La referencia publicada corresponde a tareas con documentos y la reporta el proveedor de la herramienta, no un estudio independiente. El promedio de Linko es dato de demostración.</p>'+
+  '</section>'+
+
+  '<section class="card">'+
+    '<div class="card-h"><h2>Detalle por tarea</h2><p>Medición directa, no estimación</p></div>'+
+    '<div class="tblwrap"><table class="data">'+
+      '<thead><tr><th>Tarea</th><th>Antes</th><th>Después</th><th>Cambio</th></tr></thead>'+
+      '<tbody>'+SUBPROC.map(r=>'<tr><td>'+esc(r[0])+'</td><td class="n">'+esc(r[1])+'</td><td class="n">'+esc(r[2])+'</td><td class="dl">'+esc(r[3])+'</td></tr>').join("")+'</tbody>'+
+    '</table></div>'+
+  '</section>'+
+
+  '<section class="card">'+
+    '<div class="card-h"><h2>Siguiente paso</h2><p>Decisión del despacho</p></div>'+
+    '<p class="lead">Con el piloto cerrado, la cola de diagnóstico queda así: organización interna (8 h/semana, sin benchmark) y atención a clientes (5 h/semana). Puede abrir el siguiente o cerrar aquí.</p>'+
+    '<div class="rowb"><button class="btn pri" data-act="reset">Abrir el siguiente piloto</button><button class="btn" data-act="reset">Cerrar y descargar el informe</button></div>'+
+  '</section>';
+}
+const kpi=(k,v,u,d,c)=>'<div class="kpi"><div class="k">'+k+'</div><div class="v">'+v+(u?'<small>'+u+'</small>':"")+'</div><div class="d '+(c||"")+'">'+d+'</div></div>';
+const bar=(l,s,v,you)=>'<div class="cmpr"><span class="cl"><b>'+esc(l)+'</b><span>'+esc(s)+'</span></span>'+
+  '<span class="btrk"><i class="'+(you?"you":"")+'" style="width:'+v+'%"></i></span><span class="cv">'+v+'%</span></div>';
+
+function trend(){
+  const W=620,H=216,pl=40,pr=16,pt=16,pb=34,max=13;
+  const x=i=>pl+(W-pl-pr)*(i/(TREND.length-1));
+  const y=v=>pt+(H-pt-pb)*(1-v/max);
+  const pts=TREND.map((v,i)=>x(i).toFixed(1)+","+y(v).toFixed(1));
+  const area="M"+x(0).toFixed(1)+","+y(0).toFixed(1)+"L"+pts.join("L")+"L"+x(TREND.length-1).toFixed(1)+","+y(0).toFixed(1)+"Z";
+  let g="";
+  [0,4,8,12].forEach(v=>{
+    g+='<line x1="'+pl+'" y1="'+y(v).toFixed(1)+'" x2="'+(W-pr)+'" y2="'+y(v).toFixed(1)+'" stroke="var(--line)" stroke-width="1"/>'+
+       '<text x="'+(pl-9)+'" y="'+(y(v)+4).toFixed(1)+'" text-anchor="end" font-size="11" font-family="IBM Plex Mono, monospace" fill="var(--ink-3)">'+v+'</text>';
+  });
+  let lb="";
+  TREND.forEach((v,i)=>{ lb+='<text x="'+x(i).toFixed(1)+'" y="'+(H-12)+'" text-anchor="middle" font-size="11" font-family="IBM Plex Mono, monospace" fill="var(--ink-3)">S'+(i+1)+'</text>'; });
+  const lx=x(TREND.length-1), ly=y(TREND[TREND.length-1]);
+  return '<svg viewBox="0 0 '+W+' '+H+'" role="img" aria-label="Horas semanales dedicadas al proceso, de 12,0 en la semana 1 a 3,2 en la semana 8">'+
+    g+
+    '<path d="'+area+'" fill="var(--brand-soft)"/>'+
+    '<polyline points="'+pts.join(" ")+'" fill="none" stroke="var(--brand)" stroke-width="2.4" stroke-linejoin="round" stroke-linecap="round"/>'+
+    '<circle cx="'+x(0).toFixed(1)+'" cy="'+y(TREND[0]).toFixed(1)+'" r="4" fill="var(--panel)" stroke="var(--brand)" stroke-width="2.2"/>'+
+    '<circle cx="'+lx.toFixed(1)+'" cy="'+ly.toFixed(1)+'" r="5" fill="var(--brand)"/>'+
+    '<text x="'+(x(0)+9).toFixed(1)+'" y="'+(y(TREND[0])-9).toFixed(1)+'" font-size="12" font-family="IBM Plex Mono, monospace" fill="var(--ink-2)">12,0 h</text>'+
+    '<text x="'+(lx-7).toFixed(1)+'" y="'+(ly-13).toFixed(1)+'" text-anchor="end" font-size="13" font-weight="600" font-family="IBM Plex Mono, monospace" fill="var(--brand)">3,2 h</text>'+
+    '<text x="'+pl+'" y="'+(H-12)+'" text-anchor="middle" font-size="11" font-family="IBM Plex Mono, monospace" fill="transparent">.</text>'+
+    lb+
+  '</svg>';
+}
+
+function emptyState(t,p,go,btn){
+  return '<div class="phead"><p class="eyebrow">'+esc(TABS.find(x=>x.v===S.view).l.toUpperCase())+'</p><h1>'+esc(t)+'</h1></div>'+
+    '<div class="empty"><span class="ic">'+I.big+'</span><b>'+esc(t)+'</b><p>'+esc(p)+'</p>'+
+    '<button class="btn pri" data-go="'+go+'">'+esc(btn)+'</button></div>';
+}
+
+/* ============ Render ============ */
+function render(){
+  renderTabs();
+  $("#view").innerHTML={diagnostico:vDiagnostico,asignacion:vAsignacion,ejecucion:vEjecucion,seguimiento:vSeguimiento}[S.view]();
+  const m=$("#msgs"); if(m) m.scrollTop=m.scrollHeight;
+  wireDrop();
+}
+
+/* ============ Carga de archivos ============ */
+function addFiles(list){
+  for(const f of list){
+    const kb=f.size/1024;
+    S.files.push({id:Math.random().toString(36).slice(2),n:f.name,
+      s:kb>1024?(kb/1024).toFixed(1).replace(".",",")+" MB":Math.max(1,Math.round(kb))+" KB"});
+  }
+  render();
+}
+function wireDrop(){
+  const d=$("#drop"), inp=$("#fin"); if(!d||!inp) return;
+  d.addEventListener("click",()=>inp.click());
+  d.addEventListener("keydown",e=>{ if(e.key==="Enter"||e.key===" "){ e.preventDefault(); inp.click(); } });
+  d.addEventListener("dragover",e=>{ e.preventDefault(); d.classList.add("over"); });
+  d.addEventListener("dragleave",()=>d.classList.remove("over"));
+  d.addEventListener("drop",e=>{ e.preventDefault(); d.classList.remove("over"); if(e.dataTransfer&&e.dataTransfer.files.length) addFiles(e.dataTransfer.files); });
+  inp.addEventListener("change",()=>{ if(inp.files.length) addFiles(inp.files); });
+}
+
+/* ============ Eventos ============ */
+document.addEventListener("click",e=>{
+  const g=e.target.closest("[data-go]");
+  if(g){ e.preventDefault(); go(g.dataset.go); return; }
+  const del=e.target.closest("[data-del]");
+  if(del){ S.files=S.files.filter(f=>f.id!==del.dataset.del); render(); return; }
+  const b=e.target.closest("[data-act]"); if(!b||b.disabled) return;
+  switch(b.dataset.act){
+    case "analyze":{
+      S.phase="analyzing"; S.astep=0; render();
+      const t=[520,560,540];
+      setTimeout(()=>{ S.astep=1; if(S.phase==="analyzing") render();
+        setTimeout(()=>{ S.astep=2; if(S.phase==="analyzing") render();
+          setTimeout(()=>{ if(S.phase==="analyzing"){ S.phase="result"; render(); window.scrollTo({top:0}); } },t[2]);
+        },t[1]);
+      },t[0]);
+      break; }
+    case "redo": S.phase="form"; render(); break;
+    case "pick": S.picked=b.dataset.id; render(); break;
+    case "swap": S.terna=S.terna==="A"?"B":"A"; S.picked=null; render(); break;
+    case "approve": S.approved=true; render(); break;
+    case "ok":{
+      const i=+b.dataset.i, d=S.delivs[i];
+      d.st="done"; S.changeOpen=false;
+      const nx=S.delivs.find(x=>x.st==="pend");
+      if(nx) nx.st="review";
+      S.msgs.push({f:"sys",t:"Usted aprobó «"+d.n+"»"});
+      render();
+      const pro=P[S.picked];
+      setTimeout(()=>{
+        if(!S.approved) return;
+        S.msgs.push({f:"pro",t:nx?"Gracias, don Jose. Sigo con «"+nx.n.toLowerCase()+"» y le aviso cuando esté lista.":"Listo, don Jose. El piloto queda entregado. En seguimiento le dejé la medición del antes y el después."});
+        if(S.view==="ejecucion") render();
+      },800);
+      break; }
+    case "openchg": S.changeOpen=true; render(); { const t=$("#chg"); if(t) t.focus(); } break;
+    case "cancelchg": S.changeOpen=false; render(); break;
+    case "sendchg":{
+      const t=$("#chg"), v=t?t.value.trim():"";
+      if(!v){ if(t) t.focus(); return; }
+      S.changeOpen=false;
+      S.msgs.push({f:"me",t:"Cambios solicitados: "+v});
+      render();
+      setTimeout(()=>{ S.msgs.push({f:"pro",t:"Recibido. Lo ajusto y se lo envío de nuevo para su visto bueno."}); if(S.view==="ejecucion") render(); },800);
+      break; }
+    case "reset": S=fresh(); go("diagnostico"); break;
+  }
+});
+document.addEventListener("change",e=>{
+  if(e.target.id==="tyc"){ S.tyc=e.target.checked; render(); }
+  else if(e.target.id==="auth"){ S.auth=e.target.checked; render(); }
+});
+document.addEventListener("submit",e=>{
+  if(e.target.id!=="mf") return;
+  e.preventDefault();
+  const t=$("#mi"), v=t.value.trim(); if(!v) return;
+  S.msgs.push({f:"me",t:v}); t.value=""; render();
+  setTimeout(()=>{ S.msgs.push({f:"pro",t:"Con mucho gusto, don Jose. Lo reviso hoy y le confirmo."}); if(S.view==="ejecucion") render(); },800);
+});
+window.addEventListener("hashchange",()=>{
+  const v=location.hash.slice(1);
+  if(v!==S.view&&VIEWS.includes(v)){ S.view=v; render(); }
+});
+
+/* ============ Inicio ============ */
+const start=location.hash.slice(1);
+if(VIEWS.includes(start)) S.view=start;
+render();
+})();
+</script>
+
+</body>
+</html>
